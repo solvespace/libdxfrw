@@ -615,9 +615,7 @@ public:
     }
 
     ~DRW_LWPolyline() {
-        while (!vertlist.empty()) {
-            vertlist.pop_back();
-        }
+        for(DRW_Vertex2D *item : vertlist) delete item;
     }
     virtual void applyExtrusion();
     void addVertex (DRW_Vertex2D v) {
@@ -809,9 +807,7 @@ public:
         smoothM = smoothN = curvetype = 0;
     }
     ~DRW_Polyline() {
-        while (!vertlist.empty()) {
-           vertlist.pop_back();
-         }
+        for(DRW_Vertex *item : vertlist) delete item;
     }
     void addVertex (DRW_Vertex v) {
         DRW_Vertex *vert = new DRW_Vertex();
@@ -866,12 +862,8 @@ public:
 
     }
     ~DRW_Spline() {
-        while (!controllist.empty()) {
-           controllist.pop_back();
-        }
-        while (!fitlist.empty()) {
-           fitlist.pop_back();
-        }
+        for(DRW_Coord *item : controllist) delete item;
+        for(DRW_Coord *item : fitlist) delete item;
     }
     virtual void applyExtrusion(){}
 
@@ -923,12 +915,8 @@ public:
     }
 
     ~DRW_HatchLoop() {
-/*        while (!pollist.empty()) {
-           pollist.pop_back();
-         }*/
-        while (!objlist.empty()) {
-           objlist.pop_back();
-         }
+        // for(DRW_LWPolyline *item : pollist) delete item;
+        for(DRW_Entity *item : objlist) delete item;
     }
 
     void update() {
@@ -964,9 +952,7 @@ public:
     }
 
     ~DRW_Hatch() {
-        while (!looplist.empty()) {
-           looplist.pop_back();
-         }
+        for(DRW_HatchLoop *item : looplist) delete item;
     }
 
     void appendLoop (DRW_HatchLoop *v) {
@@ -1412,9 +1398,7 @@ public:
         extrusionPoint.z = 1.0;
     }
     ~DRW_Leader() {
-        while (!vertexlist.empty()) {
-           vertexlist.pop_back();
-        }
+        for(DRW_Coord *item : vertexlist) delete item;
     }
 
     virtual void applyExtrusion(){}
