@@ -1100,6 +1100,7 @@ public:
         defPoint.z = extPoint.x = extPoint.y = 0;
         textPoint.z = rot = 0;
         clonePoint.x = clonePoint.y = clonePoint.z = 0;
+        length = 0.0;
     }
 
     DRW_Dimension(const DRW_Dimension& d): DRW_Entity(d) {
@@ -1246,6 +1247,7 @@ class DRW_DimLinear : public DRW_DimAligned {
 public:
     DRW_DimLinear() {
         eType = DRW::DIMLINEAR;
+        type = 0;
     }
     DRW_DimLinear(const DRW_Dimension& d): DRW_DimAligned(d) {
         eType = DRW::DIMLINEAR;
