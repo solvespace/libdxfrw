@@ -181,7 +181,7 @@ bool dxfRW::writeEntity(DRW_Entity *ent) {
         writer->writeInt32(420, ent->color24);
     }
     if (version > DRW::AC1014) {
-        writer->writeInt16(370, DRW_LW_Conv::lineWidth2dxfInt(ent->lWeight));
+        writer->writeInt16(370, ent->lDxfWeight);
     }
     return true;
 }

@@ -84,7 +84,7 @@ bool DRW_Entity::parseCode(int code, dxfReader *reader){
         color = reader->getInt32();
         break;
     case 370:
-        lWeight = DRW_LW_Conv::dxfInt2lineWidth(reader->getInt32());
+        lDxfWeight = reader->getInt32();
         break;
     case 48:
         ltypeScale = reader->getDouble();
@@ -360,8 +360,8 @@ bool DRW_Entity::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer* strBu
     dint16 invisibleFlag = buf->getBitShort(); //BS
     DRW_DBG(" invisibleFlag: "); DRW_DBG(invisibleFlag);
     if (version > DRW::AC1014) {//2000+
-        lWeight = DRW_LW_Conv::dwgInt2lineWidth( buf->getRawChar8() ); //RC
-        DRW_DBG(" lwFlag (lWeight): "); DRW_DBG(lWeight); DRW_DBG("\n");
+        lDxfWeight = DRW_LW_Conv::lineWidth2dxfInt(DRW_LW_Conv::dwgInt2lineWidth( buf->getRawChar8() )); //RC
+        DRW_DBG(" lwFlag (lDxfWeight): "); DRW_DBG(lDxfWeight); DRW_DBG("\n");
     }
     //Only in blocks ????????
 //    if (version > DRW::AC1018) {//2007+
@@ -810,7 +810,7 @@ void DRW_Ellipse::toPolyline(DRW_Polyline *pol, int parts){
     pol->layer = this->layer;
     pol->lineType = this->lineType;
     pol->color = this->color;
-    pol->lWeight = this->lWeight;
+    pol->lDxfWeight = this->lDxfWeight;
     pol->extPoint = this->extPoint;
 }
 

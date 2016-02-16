@@ -107,7 +107,7 @@ public:
         ltypeScale = 1.0;
         visible = true;
         layer = "0";
-        lWeight = DRW_LW_Conv::widthByLayer; // default BYLAYER  (dxf -1, dwg 29)
+        setWidthEnum(DRW_LW_Conv::widthByLayer); // default BYLAYER  (dxf -1, dwg 29)
         space = DRW::ModelSpace; // default ModelSpace (0)
         haveExtrusion = false;
         color24 = -1; //default -1 not set
@@ -131,7 +131,7 @@ public:
         ltypeScale = e.ltypeScale;
         visible = e.visible;
         layer = e.layer;
-        lWeight = e.lWeight;
+        lDxfWeight = e.lDxfWeight;
         space = e.space;
         haveExtrusion = e.haveExtrusion;
         color24 = e.color24; //default -1 not set
@@ -167,6 +167,31 @@ public:
 
     virtual void applyExtrusion() = 0;
 
+    void setWidthMm(double millimeters) {
+        if(millimeters < 0.0) {
+            setWidthEnum(DRW_LW_Conv::widthByLayer);
+            return;
+        }
+        if(millimeters > 2.11) millimeters = 2.11;
+        lDxfWeight = int(floor(millimeters * 100.0));
+    }
+    
+    double getWidthMm() const {
+        enum DRW_LW_Conv::lineWidth lw = getWidthEnum();
+        if(lw == DRW_LW_Conv::widthByBlock || 
+           lw == DRW_LW_Conv::widthByLayer ||
+           lw == DRW_LW_Conv::widthDefault) return -1.0;
+        return lDxfWeight * 100.0;
+    }
+    
+    void setWidthEnum(enum DRW_LW_Conv::lineWidth value) {
+        lDxfWeight = DRW_LW_Conv::lineWidth2dxfInt(value);
+    }
+    
+    enum DRW_LW_Conv::lineWidth getWidthEnum() const {
+        return DRW_LW_Conv::dxfInt2lineWidth(lDxfWeight);
+    }
+
 protected:
     //parses dxf pair to read entity
     bool parseCode(int code, dxfReader *reader);
@@ -193,7 +218,7 @@ public:
     UTF8STRING lineType;       /*!< line type, code 6 */
     duint32 material;          /*!< hard pointer id to material object, code 347 */
     int color;                 /*!< entity color, code 62 */
-    enum DRW_LW_Conv::lineWidth lWeight; /*!< entity lineweight, code 370 */
+    int lDxfWeight;            /*!< entity lineweight, code 370 */
     double ltypeScale;         /*!< linetype scale, code 48 */
     bool visible;              /*!< entity visibility, code 60 */
     int numProxyGraph;         /*!< Number of bytes in proxy graphics, code 92 */
