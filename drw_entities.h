@@ -108,6 +108,7 @@ public:
         visible = true;
         layer = "0";
         lWeight = DRW_LW_Conv::widthByLayer; // default BYLAYER  (dxf -1, dwg 29)
+        lRawWeight = 0; // 0 - use lWeight
         space = DRW::ModelSpace; // default ModelSpace (0)
         haveExtrusion = false;
         color24 = -1; //default -1 not set
@@ -132,6 +133,7 @@ public:
         visible = e.visible;
         layer = e.layer;
         lWeight = e.lWeight;
+        lRawWeight = e.lRawWeight;
         space = e.space;
         haveExtrusion = e.haveExtrusion;
         color24 = e.color24; //default -1 not set
@@ -167,6 +169,15 @@ public:
 
     virtual void applyExtrusion() = 0;
 
+    void setWidthMm(double millimeters) {
+        if(millimeters < 0.0) {
+            lRawWeight = 0;
+            return;
+        }
+        if(millimeters > 2.11) millimeters = 2.11;
+        lRawWeight = int(floor(millimeters * 100.0));
+    }
+
 protected:
     //parses dxf pair to read entity
     bool parseCode(int code, dxfReader *reader);
@@ -194,6 +205,7 @@ public:
     duint32 material;          /*!< hard pointer id to material object, code 347 */
     int color;                 /*!< entity color, code 62 */
     enum DRW_LW_Conv::lineWidth lWeight; /*!< entity lineweight, code 370 */
+    int lRawWeight;            /*!< entity raw lineweight, code 370. default value is 0 - use the lWeight value */
     double ltypeScale;         /*!< linetype scale, code 48 */
     bool visible;              /*!< entity visibility, code 60 */
     int numProxyGraph;         /*!< Number of bytes in proxy graphics, code 92 */
@@ -1088,6 +1100,7 @@ public:
         defPoint.z = extPoint.x = extPoint.y = 0;
         textPoint.z = rot = 0;
         clonePoint.x = clonePoint.y = clonePoint.z = 0;
+        length = 0.0;
     }
 
     DRW_Dimension(const DRW_Dimension& d): DRW_Entity(d) {
@@ -1205,6 +1218,7 @@ class DRW_DimAligned : public DRW_Dimension {
 public:
     DRW_DimAligned(){
         eType = DRW::DIMALIGNED;
+        type = 1;
     }
     DRW_DimAligned(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMALIGNED;
@@ -1233,6 +1247,7 @@ class DRW_DimLinear : public DRW_DimAligned {
 public:
     DRW_DimLinear() {
         eType = DRW::DIMLINEAR;
+        type = 0;
     }
     DRW_DimLinear(const DRW_Dimension& d): DRW_DimAligned(d) {
         eType = DRW::DIMLINEAR;
@@ -1254,6 +1269,7 @@ class DRW_DimRadial : public DRW_Dimension {
 public:
     DRW_DimRadial() {
         eType = DRW::DIMRADIAL;
+        type = 4;
     }
     DRW_DimRadial(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMRADIAL;
@@ -1280,6 +1296,7 @@ class DRW_DimDiametric : public DRW_Dimension {
 public:
     DRW_DimDiametric() {
         eType = DRW::DIMDIAMETRIC;
+        type = 3;
     }
     DRW_DimDiametric(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMDIAMETRIC;
@@ -1306,6 +1323,7 @@ class DRW_DimAngular : public DRW_Dimension {
 public:
     DRW_DimAngular() {
         eType = DRW::DIMANGULAR;
+        type = 2;
     }
     DRW_DimAngular(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR;
@@ -1337,6 +1355,7 @@ class DRW_DimAngular3p : public DRW_Dimension {
 public:
     DRW_DimAngular3p() {
         eType = DRW::DIMANGULAR3P;
+        type = 5;
     }
     DRW_DimAngular3p(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR3P;
@@ -1365,6 +1384,7 @@ class DRW_DimOrdinate : public DRW_Dimension {
 public:
     DRW_DimOrdinate() {
         eType = DRW::DIMORDINATE;
+        type = 6;
     }
     DRW_DimOrdinate(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMORDINATE;

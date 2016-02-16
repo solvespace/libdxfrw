@@ -181,7 +181,11 @@ bool dxfRW::writeEntity(DRW_Entity *ent) {
         writer->writeInt32(420, ent->color24);
     }
     if (version > DRW::AC1014) {
-        writer->writeInt16(370, DRW_LW_Conv::lineWidth2dxfInt(ent->lWeight));
+        if (ent->lRawWeight != 0) {
+            writer->writeInt16(370, ent->lRawWeight);
+        } else {
+            writer->writeInt16(370, DRW_LW_Conv::lineWidth2dxfInt(ent->lWeight));
+        }
     }
     return true;
 }
@@ -487,7 +491,7 @@ bool dxfRW::writeDimstyle(DRW_Dimstyle *ent){
     if (version > DRW::AC1014) {
         writer->writeInt16(289, ent->dimatfit);
     }
-    if (version > DRW::AC1009) {
+    if (version > DRW::AC1009 && !ent->dimtxsty.empty()) {
         writer->writeUtf8String(340, ent->dimtxsty);
     }
     if (version > DRW::AC1014) {

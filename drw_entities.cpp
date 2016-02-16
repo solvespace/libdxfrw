@@ -811,6 +811,7 @@ void DRW_Ellipse::toPolyline(DRW_Polyline *pol, int parts){
     pol->lineType = this->lineType;
     pol->color = this->color;
     pol->lWeight = this->lWeight;
+    pol->lRawWeight = this->lRawWeight;
     pol->extPoint = this->extPoint;
 }
 
