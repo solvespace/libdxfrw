@@ -108,6 +108,7 @@ public:
         visible = true;
         layer = "0";
         lWeight = DRW_LW_Conv::widthByLayer; // default BYLAYER  (dxf -1, dwg 29)
+        lRawWeight = 0; // 0 - use lWeight
         space = DRW::ModelSpace; // default ModelSpace (0)
         haveExtrusion = false;
         color24 = -1; //default -1 not set
@@ -132,6 +133,7 @@ public:
         visible = e.visible;
         layer = e.layer;
         lWeight = e.lWeight;
+        lRawWeight = e.lRawWeight;
         space = e.space;
         haveExtrusion = e.haveExtrusion;
         color24 = e.color24; //default -1 not set
@@ -167,6 +169,15 @@ public:
 
     virtual void applyExtrusion() = 0;
 
+    void setWidthMm(double millimeters) {
+        if(millimeters < 0.0) {
+            lRawWeight = 0;
+            return;
+        }
+        if(millimeters > 2.11) millimeters = 2.11;
+        lRawWeight = int(floor(millimeters * 100.0));
+    }
+
 protected:
     //parses dxf pair to read entity
     bool parseCode(int code, dxfReader *reader);
@@ -194,6 +205,7 @@ public:
     duint32 material;          /*!< hard pointer id to material object, code 347 */
     int color;                 /*!< entity color, code 62 */
     enum DRW_LW_Conv::lineWidth lWeight; /*!< entity lineweight, code 370 */
+    int lRawWeight;            /*!< entity raw lineweight, code 370. default value is 0 - use the lWeight value */
     double ltypeScale;         /*!< linetype scale, code 48 */
     bool visible;              /*!< entity visibility, code 60 */
     int numProxyGraph;         /*!< Number of bytes in proxy graphics, code 92 */
