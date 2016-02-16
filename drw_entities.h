@@ -1230,6 +1230,7 @@ class DRW_DimAligned : public DRW_Dimension {
 public:
     DRW_DimAligned(){
         eType = DRW::DIMALIGNED;
+        type = 1;
     }
     DRW_DimAligned(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMALIGNED;
@@ -1279,6 +1280,7 @@ class DRW_DimRadial : public DRW_Dimension {
 public:
     DRW_DimRadial() {
         eType = DRW::DIMRADIAL;
+        type = 4;
     }
     DRW_DimRadial(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMRADIAL;
@@ -1305,6 +1307,7 @@ class DRW_DimDiametric : public DRW_Dimension {
 public:
     DRW_DimDiametric() {
         eType = DRW::DIMDIAMETRIC;
+        type = 3;
     }
     DRW_DimDiametric(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMDIAMETRIC;
@@ -1331,6 +1334,7 @@ class DRW_DimAngular : public DRW_Dimension {
 public:
     DRW_DimAngular() {
         eType = DRW::DIMANGULAR;
+        type = 2;
     }
     DRW_DimAngular(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR;
@@ -1362,6 +1366,7 @@ class DRW_DimAngular3p : public DRW_Dimension {
 public:
     DRW_DimAngular3p() {
         eType = DRW::DIMANGULAR3P;
+        type = 5;
     }
     DRW_DimAngular3p(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR3P;
@@ -1390,6 +1395,7 @@ class DRW_DimOrdinate : public DRW_Dimension {
 public:
     DRW_DimOrdinate() {
         eType = DRW::DIMORDINATE;
+        type = 6;
     }
     DRW_DimOrdinate(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMORDINATE;
