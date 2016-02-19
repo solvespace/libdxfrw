@@ -1,3 +1,8 @@
+if(MSVC)
+    # Disable some overly strict MSVC warnings.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4244 -wd4800 -wd4805")
+endif()
+
 set(intern_HEADERS
     intern/drw_cptable932.h
     intern/drw_cptable936.h
