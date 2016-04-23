@@ -815,6 +815,20 @@ public:
         flags = vertexcount = facecount = 0;
         smoothM = smoothN = curvetype = 0;
     }
+    
+    DRW_Polyline(const DRW_Polyline& p) : DRW_Point(p) {
+        flags       = p.flags      ;
+        defstawidth = p.defstawidth;
+        defendwidth = p.defendwidth;
+        vertexcount = p.vertexcount;
+        facecount   = p.facecount  ;
+        smoothM     = p.smoothM    ;
+        smoothN     = p.smoothN    ;
+        curvetype   = p.curvetype  ;
+        for (unsigned i=0; i<p.vertlist.size(); i++)// RLZ ok or new
+          this->vertlist.push_back( new DRW_Vertex( *(p.vertlist.at(i)) ) );
+    }
+    
     ~DRW_Polyline() {
         for(DRW_Vertex *item : vertlist) delete item;
     }
@@ -870,6 +884,27 @@ public:
         tolknot = tolcontrol = tolfit = 0.0000001;
 
     }
+    
+    DRW_Spline(const DRW_Spline& p):DRW_Entity(p){
+        eType        = DRW::SPLINE;
+        normalVec    = p.normalVec ;
+        tgStart      = p.tgStart   ;
+        tgEnd        = p.tgEnd     ;
+        flags        = p.flags     ;
+        degree       = p.degree    ;
+        nknots       = p.nknots    ;
+        ncontrol     = p.ncontrol  ;
+        nfit         = p.nfit      ;
+        tolknot      = p.tolknot   ;
+        tolcontrol   = p.tolcontrol;
+        tolfit       = p.tolfit    ;
+        
+        for(double v : p.knotslist) knotslist.push_back(v);
+        for(double v : p.weightlist) weightlist.push_back(v);
+        for(DRW_Coord *v : p.controllist) controllist.push_back(new DRW_Coord(*v));
+        for(DRW_Coord *v : p.fitlist) fitlist.push_back(new DRW_Coord(*v));
+    }
+    
     ~DRW_Spline() {
         for(DRW_Coord *item : controllist) delete item;
         for(DRW_Coord *item : fitlist) delete item;
