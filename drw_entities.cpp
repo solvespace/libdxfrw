@@ -1433,7 +1433,7 @@ void DRW_MText::parseCode(int code, dxfReader *reader){
     case 71: {
         // Attachment point
         Attach a = (Attach)reader->getInt32();
-        
+
         switch(a) {
             case TopLeft:
                 alignV = VTop;
@@ -2295,12 +2295,14 @@ bool DRW_Image::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     sizev = buf->getRawDouble();
     DRW_DBG("\nsize U: "); DRW_DBG(sizeu); DRW_DBG("\nsize V: "); DRW_DBG(sizev);
     duint16 displayProps = buf->getBitShort();
+    (void)displayProps;
     clip = buf->getBit();
     brightness = buf->getRawChar8();
     contrast = buf->getRawChar8();
     fade = buf->getRawChar8();
     if (version > DRW::AC1021){ //2010+
         bool clipMode = buf->getBit();
+        (void)clipMode;
     }
     duint16 clipType = buf->getBitShort();
     if (clipType == 1){
