@@ -2415,6 +2415,10 @@ void DRW_Dimension::parseCode(int code, dxfReader *reader){
     case 41:
         linefactor = reader->getDouble();
         break;
+    case 42:
+        actual = reader->getDouble();
+        hasActual = (actual != 0.0);
+        break;
     case 53:
         rot = reader->getDouble();
         break;

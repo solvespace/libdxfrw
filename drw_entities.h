@@ -1133,6 +1133,8 @@ public:
         textPoint.z = rot = 0;
         clonePoint.x = clonePoint.y = clonePoint.z = 0;
         length = 0.0;
+        hasActual = false;
+        actual = 0.0;
     }
 
     DRW_Dimension(const DRW_Dimension& d): DRW_Entity(d) {
@@ -1156,6 +1158,8 @@ public:
         arcPoint = d.arcPoint;
         circlePoint = d.circlePoint;
         length = d.length;
+        hasActual = d.hasActual;
+        actual = d.actual;
         //RLZ needed a def value for this: hdir = ???
     }
     virtual ~DRW_Dimension() {}
@@ -1191,6 +1195,9 @@ public:
     std::string getName(){return name;}                   /*!< Name of the block that contains the entities, code 2 */
     void setName(const std::string s) {name = s;}
 //    int getType(){ return type;}                      /*!< Dimension type, code 70 */
+    bool hasActualMeasurement() const { return hasActual; }
+    void setActualMeasurement(double value) { hasActual = true; actual = value; }
+    double getActualMeasurement() const { return actual; }
 
 protected:
     DRW_Coord getPt2() const {return clonePoint;}
@@ -1233,6 +1240,8 @@ private:
     DRW_Coord circlePoint;     /*!< Definition point for diameter, radius & angular dims code 15, 25 & 35 (WCS) */
     DRW_Coord arcPoint;        /*!< Point defining dimension arc, x coordinate, code 16, 26 & 36 (OCS) */
     double length;             /*!< Leader length, code 40 */
+    bool hasActual;            /*!< Actual measurement has been read, code 42 */
+    double actual;             /*!< Actual measurement (optional; read-only value), code 42 */
 
 protected:
     dwgHandle dimStyleH;
