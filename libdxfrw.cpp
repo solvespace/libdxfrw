@@ -711,7 +711,7 @@ bool dxfRW::writeLWPolyline(DRW_LWPolyline *ent){
         if (version > DRW::AC1009) {
             writer->writeString(100, "AcDbPolyline");
         }
-        ent->vertexnum = ent->vertlist.size();
+        ent->vertexnum = (int)ent->vertlist.size();
         writer->writeInt32(90, ent->vertexnum);
         writer->writeInt16(70, ent->flags);
         writer->writeDouble(43, ent->width);
@@ -782,8 +782,8 @@ bool dxfRW::writePolyline(DRW_Polyline *ent) {
         writer->writeDouble(230, crd.z);
     }
 
-    int vertexnum = ent->vertlist.size();
-    for (int i = 0; i < vertexnum; i++) {
+    size_t vertexnum = ent->vertlist.size();
+    for (size_t i = 0; i < vertexnum; i++) {
         DRW_Vertex *v = ent->vertlist.at(i);
         writer->writeString(0, "VERTEX");
         writeEntity(ent);
@@ -888,7 +888,7 @@ bool dxfRW::writeHatch(DRW_Hatch *ent){
         writer->writeString(2, ent->name);
         writer->writeInt16(70, ent->solid);
         writer->writeInt16(71, ent->associative);
-        ent->loopsnum = ent->looplist.size();
+        ent->loopsnum = (int)ent->looplist.size();
         writer->writeInt16(91, ent->loopsnum);
         //write paths data
         for (int i = 0;  i< ent->loopsnum; i++){

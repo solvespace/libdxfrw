@@ -965,7 +965,7 @@ public:
     }
 
     void update() {
-        numedges = objlist.size();
+        numedges = (int)objlist.size();
     }
 
 public:
