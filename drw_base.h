@@ -101,6 +101,22 @@ enum DBG_LEVEL {
 
 //! Special codes for colors
 enum ColorCodes {
+    Black = 250,
+    Green = 3,
+    Red = 1,
+    Brown = 15,
+    Yellow = 2,
+    Cyan = 4,
+    Magenta = 6,
+    Gray = 8,
+    Blue = 5,
+    LBlue = 163,
+    LGreen = 121,
+    LCyan = 131,
+    LRed = 23,
+    LMagenta = 221,
+    LGray = 252,
+    White = 7,
     ColorByLayer = 256,
     ColorByBlock = 0
 };
