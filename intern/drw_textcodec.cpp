@@ -242,8 +242,8 @@ std::string DRW_Converter::encodeNum(int c){
     return std::string((char*)ret);
 }
 
-/** 's' is a string with at least 4 bytes lenght
-** returned 'b' is byte lenght of encoded char: 2,3 or 4
+/** 's' is a string with at least 4 bytes length
+** returned 'b' is byte length of encoded char: 2,3 or 4
 **/
 int DRW_Converter::decodeNum(std::string s, int *b){
     int code= 0;
@@ -285,7 +285,7 @@ std::string DRW_ConvDBCSTable::fromUtf8(std::string *s) {
             j = i+l;
             i = j - 1;
             notFound = true;
-                for (int k=0; k<cpLenght; k++){
+                for (int k=0; k<cpLength; k++){
                     if(doubleTable[k][1] == code) {
                         int data = doubleTable[k][0];
                         char d[3];
@@ -370,7 +370,7 @@ std::string DRW_Conv932Table::fromUtf8(std::string *s) {
             }
             if (notFound && ( code<0xF8 || (code>0x390 && code<0x542) ||
                     (code>0x200F && code<0x9FA1) || code>0xF928 )) {
-                for (int k=0; k<cpLenght; k++){
+                for (int k=0; k<cpLength; k++){
                     if(doubleTable[k][1] == code) {
                         int data = doubleTable[k][0];
                         char d[3];
