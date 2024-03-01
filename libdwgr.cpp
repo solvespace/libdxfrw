@@ -36,7 +36,7 @@
 };*/
 
 dwgR::dwgR(){
-    DRW_DBGSL(DRW_dbg::NONE);
+    DRW_DBGSL(DRW_dbg::None);
     reader = NULL;
 //    writer = NULL;
     applyExt = false;
@@ -50,13 +50,13 @@ dwgR::~dwgR(){
 
 }
 
-void dwgR::setDebug(DRW::DBG_LEVEL lvl){
+void dwgR::setDebug(DRW::DebugLevel lvl){
     switch (lvl){
-    case DRW::DEBUG:
-        DRW_DBGSL(DRW_dbg::DEBUG);
+    case DRW::Debug:
+        DRW_DBGSL(DRW_dbg::Debug);
         break;
     default:
-        DRW_DBGSL(DRW_dbg::NONE);
+        DRW_DBGSL(DRW_dbg::None);
     }
 }
 
