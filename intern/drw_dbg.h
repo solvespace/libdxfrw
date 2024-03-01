@@ -31,8 +31,8 @@ class print_none;
 class DRW_dbg {
 public:
     enum LEVEL {
-        NONE,
-        DEBUG
+        None,
+        Debug
     };
     void setLevel(LEVEL lvl);
     LEVEL getLevel();

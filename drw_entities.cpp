@@ -1270,7 +1270,7 @@ bool DRW_LWPolyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
             }
         }
     }
-    if (DRW_DBGGL == DRW_dbg::DEBUG){
+    if (DRW_DBGGL == DRW_dbg::Debug){
         DRW_DBG("\nVertex list: ");
         for (std::vector<DRW_Vertex2D *>::iterator it = vertlist.begin() ; it != vertlist.end(); ++it){
             DRW_Vertex2D* pv = *it;
@@ -2210,7 +2210,7 @@ bool DRW_Spline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         DRW_Coord* crd = new DRW_Coord(buf->get3BitDouble());
         fitlist.push_back (crd);
     }
-    if (DRW_DBGGL == DRW_dbg::DEBUG){
+    if (DRW_DBGGL == DRW_dbg::Debug){
         DRW_DBG("\nknots list: ");
         for (std::vector<double>::iterator it = knotslist.begin() ; it != knotslist.end(); ++it){
             DRW_DBG("\n"); DRW_DBG(*it);

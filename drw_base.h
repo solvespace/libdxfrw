@@ -94,9 +94,9 @@ BAD_READ_ENTITIES,    /*!< error in entities read process. */
 BAD_READ_OBJECTS      /*!< error in objects read process. */
 };
 
-enum DBG_LEVEL {
-    NONE,
-    DEBUG
+enum DebugLevel {
+    None,
+    Debug
 };
 
 //! Special codes for colors
