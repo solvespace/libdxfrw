@@ -17,7 +17,7 @@
 
 class dxfWriter {
 public:
-    dxfWriter(std::ostream *stream){filestr = stream; /*count =0;*/}
+    dxfWriter(std::ofstream *stream){filestr = stream; /*count =0;*/}
     virtual ~dxfWriter(){}
     virtual bool writeString(int code, std::string text) = 0;
     bool writeUtf8String(int code, std::string text);
@@ -28,18 +28,18 @@ public:
     virtual bool writeInt64(int code, unsigned long long int data) = 0;
     virtual bool writeDouble(int code, double data) = 0;
     virtual bool writeBool(int code, bool data) = 0;
-    void setVersion(std::string *v, bool dxfFormat){encoder.setVersion(v, dxfFormat);}
-    void setCodePage(std::string *c){encoder.setCodePage(c, true);}
+    void setVersion(const std::string &v, bool dxfFormat){encoder.setVersion(v, dxfFormat);}
+    void setCodePage(const std::string &c){encoder.setCodePage(c, true);}
     std::string getCodePage(){return encoder.getCodePage();}
 protected:
-    std::ostream *filestr;
+    std::ofstream *filestr;
 private:
     DRW_TextCodec encoder;
 };
 
 class dxfWriterBinary : public dxfWriter {
 public:
-    dxfWriterBinary(std::ostream *stream):dxfWriter(stream){}
+    dxfWriterBinary(std::ofstream *stream):dxfWriter(stream){}
     virtual ~dxfWriterBinary() {}
     virtual bool writeString(int code, std::string text);
     virtual bool writeInt16(int code, int data);
@@ -51,7 +51,7 @@ public:
 
 class dxfWriterAscii : public dxfWriter {
 public:
-    dxfWriterAscii(std::ostream *stream);
+    dxfWriterAscii(std::ofstream *stream);
     virtual ~dxfWriterAscii(){}
     virtual bool writeString(int code, std::string text);
     virtual bool writeInt16(int code, int data);

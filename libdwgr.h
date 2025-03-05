@@ -14,6 +14,8 @@
 #define LIBDWGR_H
 
 #include <string>
+#include <memory>
+#include <unordered_map>
 //#include <deque>
 #include "drw_entities.h"
 #include "drw_objects.h"
@@ -24,26 +26,29 @@ class dwgReader;
 
 class dwgR {
 public:
-    dwgR();
+    explicit dwgR(const char* name);
     ~dwgR();
     //read: return true if all ok
-    bool read(std::istream &stream, DRW_Interface *interface_, bool ext);
-    bool getPreview(std::istream &stream);
+    bool read(DRW_Interface *interface_, bool ext);
+    bool getPreview();
     DRW::Version getVersion(){return version;}
     DRW::error getError(){return error;}
-    void setDebug(DRW::DBG_LEVEL lvl);
+bool testReader();
+    void setDebug(DRW::DebugLevel lvl);
 
 private:
-    bool open(std::istream *stream);
+    bool openFile(std::ifstream *filestr);
     bool processDwg();
+    static std::unique_ptr< dwgReader > createReaderForVersion(DRW::Version version, std::ifstream *stream, dwgR *p);
+
 private:
-    DRW::Version version;
-    DRW::error error;
+    DRW::Version version { DRW::UNKNOWNV };
+    DRW::error error { DRW::BAD_NONE };
     std::string fileName;
-    bool applyExt; /*apply extrusion in entities to conv in 2D?*/
+    bool applyExt { false }; /*apply extrusion in entities to conv in 2D?*/
     std::string codePage;
-    DRW_Interface *iface;
-    dwgReader *reader;
+    DRW_Interface *iface { nullptr };
+    std::unique_ptr< dwgReader > reader;
 
 };
 

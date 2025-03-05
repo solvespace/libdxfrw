@@ -1,6 +1,7 @@
 /******************************************************************************
 **  libDXFrw - Library to read/write DXF files (ascii & binary)              **
 **                                                                           **
+**  Copyright (C) 2016-2021 A. Stebich (librecad@mail.lordofbikes.de)        **
 **  Copyright (C) 2011-2015 José F. Soriano, rallazz@gmail.com               **
 **                                                                           **
 **  This library is free software, licensed under the terms of the GNU       **
@@ -16,8 +17,8 @@
 #define DRW_VERSION "0.6.3"
 
 #include <string>
-#include <list>
 #include <cmath>
+#include <unordered_map>
 
 #ifdef DRW_ASSERTS
 # define drw_assert(a) assert(a)
@@ -66,16 +67,46 @@ namespace DRW {
 
 //! Version numbers for the DXF Format.
 enum Version {
-    UNKNOWNV,     /*!< UNKNOWN VERSION. */
-    AC1006,       /*!< R10. */
-    AC1009,       /*!< R11 & R12. */
-    AC1012,       /*!< R13. */
-    AC1014,       /*!< R14. */
-    AC1015,       /*!< ACAD 2000. */
-    AC1018,       /*!< ACAD 2004. */
-    AC1021,       /*!< ACAD 2007. */
-    AC1024,       /*!< ACAD 2010. */
-    AC1027        /*!< ACAD 2013. */
+    UNKNOWNV,     //!< UNKNOWN VERSION.
+    MC00,         //!< DWG Release 1.1
+    AC12,         //!< DWG Release 1.2
+    AC14,         //!< DWG Release 1.4
+    AC150,        //!< DWG Release 2.0
+    AC210,        //!< DWG Release 2.10
+    AC1002,       //!< DWG Release 2.5
+    AC1003,       //!< DWG Release 2.6
+    AC1004,       //!< DWG Relase 9
+    AC1006,       //!< DWG Release 10
+    AC1009,       //!< DWG Release 11/12 (LT R1/R2)
+    AC1012,       //!< DWG Release 13 (LT95)
+    AC1014,       //!< DWG Release 14/14.01 (LT97/LT98)
+    AC1015,       //!< AutoCAD 2000/2000i/2002
+    AC1018,       //!< AutoCAD 2004/2005/2006
+    AC1021,       //!< AutoCAD 2007/2008/2009
+    AC1024,       //!< AutoCAD 2010/2011/2012
+    AC1027,       //!< AutoCAD 2013/2014/2015/2016/2017
+    AC1032,       //!< AutoCAD 2018/2019/2020
+};
+
+const std::unordered_map< const char*, DRW::Version > dwgVersionStrings {
+    { "MC0.0", DRW::MC00 },
+    { "AC1.2", DRW::AC12 },
+    { "AC1.4", DRW::AC14 },
+    { "AC1.50", DRW::AC150 },
+    { "AC2.10", DRW::AC210 },
+    { "AC1002", DRW::AC1002 },
+    { "AC1003", DRW::AC1003 },
+    { "AC1004", DRW::AC1004 },
+    { "AC1006", DRW::AC1006 },
+    { "AC1009", DRW::AC1009 },
+    { "AC1012", DRW::AC1012 },
+    { "AC1014", DRW::AC1014 },
+    { "AC1015", DRW::AC1015 },
+    { "AC1018", DRW::AC1018 },
+    { "AC1021", DRW::AC1021 },
+    { "AC1024", DRW::AC1024 },
+    { "AC1027", DRW::AC1027 },
+    { "AC1032", DRW::AC1032 },
 };
 
 enum error {
@@ -83,7 +114,7 @@ BAD_NONE,             /*!< No error. */
 BAD_UNKNOWN,          /*!< UNKNOWN. */
 BAD_OPEN,             /*!< error opening file. */
 BAD_VERSION,          /*!< unsupported version. */
-BAD_READ_METADATA,    /*!< error reading matadata. */
+BAD_READ_METADATA,    /*!< error reading metadata. */
 BAD_READ_FILE_HEADER, /*!< error in file header read process. */
 BAD_READ_HEADER,      /*!< error in header vars read process. */
 BAD_READ_HANDLES,     /*!< error in object map read process. */
@@ -91,35 +122,46 @@ BAD_READ_CLASSES,     /*!< error in classes read process. */
 BAD_READ_TABLES,      /*!< error in tables read process. */
 BAD_READ_BLOCKS,      /*!< error in block read process. */
 BAD_READ_ENTITIES,    /*!< error in entities read process. */
-BAD_READ_OBJECTS      /*!< error in objects read process. */
+BAD_READ_OBJECTS,     /*!< error in objects read process. */
+BAD_READ_SECTION,     /*!< error in sections read process. */
+BAD_CODE_PARSED,      /*!< error in any parseCodes() method. */
 };
 
-enum DBG_LEVEL {
-    NONE,
-    DEBUG
+enum class DebugLevel {
+    None,
+    Debug
 };
+
+/**
+ * Interface for debug printers.
+ *
+ * The base class is silent and ignores all debugging.
+ */
+class DebugPrinter {
+public:
+    virtual void printS(const std::string &s){(void)s;}
+    virtual void printI(long long int i){(void)i;}
+    virtual void printUI(long long unsigned int i){(void)i;}
+    virtual void printD(double d){(void)d;}
+    virtual void printH(long long int i){(void)i;}
+    virtual void printB(int i){(void)i;}
+    virtual void printHL(int c, int s, int h){(void)c;(void)s;(void)h;}
+    virtual void printPT(double x, double y, double z){(void)x;(void)y;(void)z;}
+    DebugPrinter()=default;
+    virtual ~DebugPrinter()=default;
+};
+
+/**
+ * Sets a custom debug printer to use when outputting debug messages.
+ *
+ * Ownership of `printer` is transferred.
+ */
+void setCustomDebugPrinter( DebugPrinter* printer );
 
 //! Special codes for colors
 enum ColorCodes {
-    ColorByBlock = 0,
-    Red = 1,
-    Yellow = 2,
-    Green = 3,
-    Cyan = 4,
-    Blue = 5,
-    Magenta = 6,
-    White = 7,
-    Gray = 8,
-    Brown = 15,
-    LRed = 23,
-    LGreen = 121,
-    LCyan = 131,
-    LBlue = 163,
-    LMagenta = 221,
-    Black = 250,
-    LGray = 252,
     ColorByLayer = 256,
-
+    ColorByBlock = 0
 };
 
 //! Spaces
@@ -166,15 +208,13 @@ enum TransparencyCodes {
 */
 class DRW_Coord {
 public:
-    DRW_Coord() = default;
-    DRW_Coord(double ix, double iy, double iz) {
-        x = ix; y = iy; z = iz;
-    }
+    DRW_Coord()=default;
+    DRW_Coord(double ix, double iy, double iz): x(ix), y(iy),z(iz){}
 
 /*!< convert to unitary vector */
     void unitize(){
         double dist;
-        dist = sqrt(x*x + y*y + z*z);
+        dist = hypot(hypot(x, y), z);
         if (dist > 0.0) {
             x= x/dist;
             y= y/dist;
@@ -183,9 +223,9 @@ public:
     }
 
 public:
-    double x = 0;
-    double y = 0;
-    double z = 0;
+    double x{0};
+    double y{0};
+    double z{0};
 };
 
 
@@ -196,16 +236,9 @@ public:
 */
 class DRW_Vertex2D {
 public:
-    DRW_Vertex2D() {
-//        eType = DRW::LWPOLYLINE;
-        stawidth = endwidth = bulge = 0;
-    }
-    DRW_Vertex2D(double sx, double sy, double b) {
-        stawidth = endwidth = 0;
-        x = sx;
-        y =sy;
-        bulge = b;
-    }
+    DRW_Vertex2D(): x(0), y(0), stawidth(0), endwidth(0), bulge(0){}
+
+    DRW_Vertex2D(double sx, double sy, double b): x(sx), y(sy), stawidth(0), endwidth(0), bulge(b) {}
 
 public:
     double x;                 /*!< x coordinate, code 10 */
@@ -231,68 +264,61 @@ public:
         INVALID
     };
 //TODO: add INT64 support
-    DRW_Variant() {
-        type = INVALID;
-    }
+    DRW_Variant(): sdata(std::string()), vdata(), content(0), vType(INVALID), vCode(0) {}
 
-    DRW_Variant(int c, dint32 i) {
-        code = c; addInt(i);
-    }
-    DRW_Variant(int c, duint32 i) {
-        code = c; addInt(static_cast<dint32>(i));//RLZ: verify if worrk with big numbers
-    }
-    DRW_Variant(int c, double d) {
-        code = c; addDouble(d);
-    }
-    DRW_Variant(int c, UTF8STRING s) {
-        code = c; addString(s);
-    }
-    DRW_Variant(int c, DRW_Coord crd) {
-        code = c; addCoord(crd);
-    }
-    DRW_Variant(const DRW_Variant& d) {
-        code = d.code;
-        type = d.type;
-        content = d.content;
-        if (d.type == COORD) {
-            vdata = d.vdata;
+    DRW_Variant(int c, dint32 i): sdata(std::string()), vdata(), content(i), vType(INTEGER), vCode(c){}
+
+    DRW_Variant(int c, duint32 i): sdata(std::string()), vdata(), content(static_cast<dint32>(i)), vType(INTEGER), vCode(c) {}
+
+    DRW_Variant(int c, double d): sdata(std::string()), vdata(), content(d), vType(DOUBLE), vCode(c) {}
+
+    DRW_Variant(int c, UTF8STRING s): sdata(s), vdata(), content(&sdata), vType(STRING), vCode(c) {}
+
+    DRW_Variant(int c, DRW_Coord crd): sdata(std::string()), vdata(crd), content(&vdata), vType(COORD), vCode(c) {}
+
+    DRW_Variant(const DRW_Variant& d): sdata(d.sdata), vdata(d.vdata), content(d.content), vType(d.vType), vCode(d.vCode) {
+        if (d.vType == COORD)
             content.v = &vdata;
-        }
-        if (d.type == STRING) {
-            sdata = d.sdata;
+        if (d.vType == STRING)
             content.s = &sdata;
-        }
     }
 
     ~DRW_Variant() {
     }
 
-    void addString(UTF8STRING s) {setType(STRING); sdata = s; content.s = &sdata;}
-    void addInt(int i) {setType(INTEGER); content.i = i;}
-    void addDouble(double d) {setType(DOUBLE); content.d = d;}
-    void addCoord() {setType(COORD); vdata.x=0.0; vdata.y=0.0; vdata.z=0.0; content.v = &vdata;}
-    void addCoord(DRW_Coord v) {setType(COORD); vdata = v; content.v = &vdata;}
-    void setType(enum TYPE t) { type = t;}
-    void setCoordX(double d) { if (type == COORD) vdata.x = d;}
-    void setCoordY(double d) { if (type == COORD) vdata.y = d;}
-    void setCoordZ(double d) { if (type == COORD) vdata.z = d;}
-
-private:
-    typedef union {
-        UTF8STRING *s;
-        dint32 i;
-        double d;
-        DRW_Coord *v;
-    } DRW_VarContent;
-
-public:
-    DRW_VarContent content;
-    enum TYPE type;
-    int code;            /*!< dxf code of this value*/
+    void addString(int c, UTF8STRING s) {vType = STRING; sdata = s; content.s = &sdata; vCode=c;}
+    void addInt(int c, int i) {vType = INTEGER; content.i = i; vCode=c;}
+    void addDouble(int c, double d) {vType = DOUBLE; content.d = d; vCode=c;}
+    void addCoord(int c, DRW_Coord v) {vType = COORD; vdata = v; content.v = &vdata; vCode=c;}
+    void setCoordX(double d) { if (vType == COORD) vdata.x = d;}
+    void setCoordY(double d) { if (vType == COORD) vdata.y = d;}
+    void setCoordZ(double d) { if (vType == COORD) vdata.z = d;}
+    enum TYPE type() const { return vType;}
+    int code() { return vCode;}            /*!< returns dxf code of this value*/
 
 private:
     std::string sdata;
     DRW_Coord vdata;
+
+private:
+    union DRW_VarContent{
+        UTF8STRING *s;
+        dint32 i;
+        double d;
+        DRW_Coord *v;
+
+        DRW_VarContent(UTF8STRING *sd):s(sd){}
+        DRW_VarContent(dint32 id):i(id){}
+        DRW_VarContent(double dd):d(dd){}
+        DRW_VarContent(DRW_Coord *vd):v(vd){}
+    };
+
+public:
+    DRW_VarContent content;
+private:
+    enum TYPE vType;
+    int vCode;            /*!< dxf code of this value*/
+
 };
 
 //! Class to handle dwg handles
@@ -302,11 +328,8 @@ private:
 */
 class dwgHandle{
 public:
-    dwgHandle(){
-        code=0;
-        size=0;
-        ref=0;
-    }
+    dwgHandle(): code(0), size(0), ref(0){}
+
     ~dwgHandle(){}
     duint8 code;
     duint8 size;
@@ -316,7 +339,7 @@ public:
 //! Class to convert between line width and integer
 /*!
 *  Class to convert between line width and integer
-*  verifing valid values, if value is not valid
+*  verifying valid values, if value is not valid
 *  returns widthDefault.
 *  @author Rallaz
 */
@@ -491,3 +514,4 @@ public:
 #endif
 
 // EOF
+

@@ -1,6 +1,7 @@
 /******************************************************************************
 **  libDXFrw - Library to read/write DXF files (ascii & binary)              **
 **                                                                           **
+**  Copyright (C) 2016-2022 A. Stebich (librecad@mail.lordofbikes.de)        **
 **  Copyright (C) 2011-2015 José F. Soriano, rallazz@gmail.com               **
 **                                                                           **
 **  This library is free software, licensed under the terms of the GNU       **
@@ -17,6 +18,7 @@
 #include "intern/dxfwriter.h"
 #include "intern/dwgbuffer.h"
 #include "intern/drw_dbg.h"
+#include "intern/drw_reserve.h"
 #include "intern/dwgutil.h"
 
 //! Base class for tables entries
@@ -24,7 +26,7 @@
 *  Base class for tables entries
 *  @author Rallaz
 */
-void DRW_TableEntry::parseCode(int code, dxfReader *reader){
+bool DRW_TableEntry::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 5:
         handle = reader->getHandleString();
@@ -50,26 +52,40 @@ void DRW_TableEntry::parseCode(int code, dxfReader *reader){
     case 1011:
     case 1012:
     case 1013:
-        curr = new DRW_Variant();
-        curr->addCoord();
-        curr->setCoordX(reader->getDouble());
-        curr->code = code;
-        extData.push_back(curr);
+        // don't trust in X, Y, Z order!
+        if (nullptr != curr) {
+            curr->setCoordX( reader->getDouble());
+        }
+        else {
+            curr = new DRW_Variant( code, DRW_Coord( reader->getDouble(), 0.0, 0.0));
+            extData.push_back(curr);
+        }
         break;
     case 1020:
     case 1021:
     case 1022:
     case 1023:
-        if (curr)
-            curr->setCoordY(reader->getDouble());
+        // don't trust in X, Y, Z order!
+        if (nullptr != curr) {
+            curr->setCoordY( reader->getDouble());
+        }
+        else {
+            curr = new DRW_Variant( code, DRW_Coord( 0.0, reader->getDouble(), 0.0));
+            extData.push_back(curr);
+        }
         break;
     case 1030:
     case 1031:
     case 1032:
     case 1033:
-        if (curr)
-            curr->setCoordZ(reader->getDouble());
-        curr=NULL;
+        // don't trust in X, Y, Z order!
+        if (nullptr != curr) {
+            curr->setCoordZ( reader->getDouble());
+        }
+        else {
+            curr = new DRW_Variant( code, DRW_Coord( 0.0, 0.0, reader->getDouble()));
+            extData.push_back(curr);
+        }
         break;
     case 1040:
     case 1041:
@@ -83,6 +99,8 @@ void DRW_TableEntry::parseCode(int code, dxfReader *reader){
     default:
         break;
     }
+
+    return true;
 }
 
 bool DRW_TableEntry::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer *strBuf, duint32 bs){
@@ -181,7 +199,7 @@ DRW_DBG("\n***************************** parsing table entry *******************
 *  Class to handle ldim style symbol table entries
 *  @author Rallaz
 */
-void DRW_Dimstyle::parseCode(int code, dxfReader *reader){
+bool DRW_Dimstyle::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 105:
         handle = reader->getHandleString();
@@ -394,9 +412,10 @@ void DRW_Dimstyle::parseCode(int code, dxfReader *reader){
         dimblk2 = reader->getUtf8String();
         break;
     default:
-        DRW_TableEntry::parseCode(code, reader);
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 bool DRW_Dimstyle::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
@@ -424,14 +443,17 @@ bool DRW_Dimstyle::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
 *  Class to handle line type symbol table entries
 *  @author Rallaz
 */
-void DRW_LType::parseCode(int code, dxfReader *reader){
+bool DRW_LType::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 3:
         desc = reader->getUtf8String();
         break;
     case 73:
         size = reader->getInt32();
-        path.reserve(size);
+        path.clear();
+        if (!DRW::reserve( path, size)) {
+            return false;
+        }
         break;
     case 40:
         length = reader->getDouble();
@@ -444,9 +466,10 @@ void DRW_LType::parseCode(int code, dxfReader *reader){
         haveShape = reader->getInt32();
         break;*/
     default:
-        DRW_TableEntry::parseCode(code, reader);
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 //! Update line type
@@ -457,7 +480,7 @@ void DRW_LType::parseCode(int code, dxfReader *reader){
 /*TODO: control max length permited */
 void DRW_LType::update(){
     double d =0;
-    size = (int)path.size();
+    size = path.size();
     for (int i = 0;  i< size; i++){
         d += fabs(path.at(i));
     }
@@ -571,7 +594,7 @@ bool DRW_LType::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
 *  Class to handle layer symbol table entries
 *  @author Rallaz
 */
-void DRW_Layer::parseCode(int code, dxfReader *reader){
+bool DRW_Layer::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 6:
         lineType = reader->getUtf8String();
@@ -595,9 +618,10 @@ void DRW_Layer::parseCode(int code, dxfReader *reader){
         color24 = reader->getInt32();
         break;
     default:
-        DRW_TableEntry::parseCode(code, reader);
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 bool DRW_Layer::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
@@ -693,7 +717,7 @@ bool DRW_Block_Record::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs
         DRW_DBG(" xrefindex: "); DRW_DBG(xrefindex); DRW_DBG("\n");
     }
     flags |= buf->getBit() << 4;//is refx dependent, block code 70, bit 5 (16)
-    flags |= buf->getBit(); //if is anonimous block (*U) block code 70, bit 1 (1)
+    flags |= buf->getBit(); //if is anonymous block (*U) block code 70, bit 1 (1)
     flags |= buf->getBit() << 1; //if block contains attdefs, block code 70, bit 2 (2)
     bool blockIsXref = buf->getBit(); //if is a Xref, block code 70, bit 3 (4)
     bool xrefOverlaid = buf->getBit(); //if is a overlaid Xref, block code 70, bit 4 (8)
@@ -705,7 +729,9 @@ bool DRW_Block_Record::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs
     DRW_DBG("flags: "); DRW_DBG(flags); DRW_DBG(", ");
     if (version > DRW::AC1015) {//2004+ fails in 2007
         objectCount = buf->getBitLong(); //Number of objects owned by this block
-        entMap.reserve(objectCount);
+        if (!DRW::reserve( entMap, objectCount)) {
+            return false;
+        }
     }
     basePoint.x = buf->getBitDouble();
     basePoint.y = buf->getBitDouble();
@@ -800,7 +826,7 @@ bool DRW_Block_Record::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs
 *  Class to handle text style symbol table entries
 *  @author Rallaz
 */
-void DRW_Textstyle::parseCode(int code, dxfReader *reader){
+bool DRW_Textstyle::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 3:
         font = reader->getUtf8String();
@@ -827,9 +853,10 @@ void DRW_Textstyle::parseCode(int code, dxfReader *reader){
         fontFamily = reader->getInt32();
         break;
     default:
-        DRW_TableEntry::parseCode(code, reader);
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 bool DRW_Textstyle::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
@@ -882,7 +909,7 @@ bool DRW_Textstyle::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
 *  Class to handle vport symbol table entries
 *  @author Rallaz
 */
-void DRW_Vport::parseCode(int code, dxfReader *reader){
+bool DRW_Vport::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 10:
         lowerLeft.x = reader->getDouble();
@@ -984,9 +1011,10 @@ void DRW_Vport::parseCode(int code, dxfReader *reader){
         snapIsopair = reader->getInt32();
         break;
     default:
-        DRW_TableEntry::parseCode(code, reader);
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 bool DRW_Vport::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
@@ -1123,7 +1151,7 @@ bool DRW_Vport::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     return buf->isGood();
 }
 
-void DRW_ImageDef::parseCode(int code, dxfReader *reader){
+bool DRW_ImageDef::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
     switch (code) {
     case 1:
         name = reader->getUtf8String();
@@ -1153,8 +1181,10 @@ void DRW_ImageDef::parseCode(int code, dxfReader *reader){
         resolution = reader->getInt32();
         break;
     default:
-        break;
+        return DRW_TableEntry::parseCode(code, reader);
     }
+
+    return true;
 }
 
 bool DRW_ImageDef::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
@@ -1170,7 +1200,7 @@ bool DRW_ImageDef::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     dint32 imgVersion = buf->getBitLong();
     DRW_DBG("class Version: "); DRW_DBG(imgVersion);
     DRW_Coord size = buf->get2RawDouble();
-    (void)size;
+    DRW_UNUSED(size);//RLZ: temporary, complete API
     name = sBuf->getVariableText(version, false);
     DRW_DBG("appId name: "); DRW_DBG(name.c_str()); DRW_DBG("\n");
     loaded = buf->getBit();
@@ -1196,6 +1226,40 @@ bool DRW_ImageDef::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     return buf->isGood();
 }
 
+bool DRW_PlotSettings::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
+    switch (code) {
+    case 5:
+        handle = reader->getHandleString();
+        break;
+    case 6:
+        plotViewName = reader->getUtf8String();
+        break;
+    case 40:
+        marginLeft = reader->getDouble();
+        break;
+    case 41:
+        marginBottom = reader->getDouble();
+        break;
+    case 42:
+        marginRight = reader->getDouble();
+        break;
+    case 43:
+        marginTop = reader->getDouble();
+        break;
+    default:
+        return DRW_TableEntry::parseCode(code, reader);
+    }
+
+    return true;
+}
+
+bool DRW_PlotSettings::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
+    (void) version;
+    (void) bs;
+    DRW_DBG("\n********************** parsing Plot Settings not yet implemented **************************\n");
+    return buf->isGood();
+}
+
 bool DRW_AppId::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     dwgBuffer sBuff = *buf;
     dwgBuffer *sBuf = buf;
@@ -1207,7 +1271,7 @@ bool DRW_AppId::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     if (!ret)
         return ret;
     name = sBuf->getVariableText(version, false);
-    DRW_DBG("appId name: "); DRW_DBG(name.c_str()); DRW_DBG("\n");
+    DRW_DBG("appId name: "); DRW_DBG(name); DRW_DBG("\n");
     flags |= buf->getBit()<< 6;// code 70, bit 7 (64)
     /*dint16 xrefindex =*/ buf->getBitShort();
     flags |= buf->getBit() << 4; //is refx dependent, style code 70, bit 5 (16)

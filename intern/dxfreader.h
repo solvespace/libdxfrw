@@ -27,7 +27,7 @@ public:
     };
     enum TYPE type;
 public:
-    dxfReader(std::istream *stream){
+    dxfReader(std::ifstream *stream){
         filestr = stream;
         type = INVALID;
     }
@@ -43,14 +43,16 @@ public:
     unsigned long long int getInt64() {return int64;}
     bool getBool() { return (intData==0) ? false : true;}
     int getVersion(){return decoder.getVersion();}
-    void setVersion(std::string *v, bool dxfFormat){decoder.setVersion(v, dxfFormat);}
-    void setCodePage(std::string *c){decoder.setCodePage(c, true);}
+    void setVersion(const std::string &v, bool dxfFormat){decoder.setVersion(v, dxfFormat);}
+    void setCodePage(const std::string &c){decoder.setCodePage(c, true);}
     std::string getCodePage(){ return decoder.getCodePage();}
+    void setIgnoreComments(const bool bValue) {m_bIgnoreComments = bValue;}
 
 protected:
     virtual bool readCode(int *code) = 0; //return true if successful (not EOF)
     virtual bool readString(std::string *text) = 0;
     virtual bool readString() = 0;
+    virtual bool readBinary() = 0;
     virtual bool readInt16() = 0;
     virtual bool readInt32() = 0;
     virtual bool readInt64() = 0;
@@ -58,7 +60,7 @@ protected:
     virtual bool readBool() = 0;
 
 protected:
-    std::istream *filestr;
+    std::ifstream *filestr;
     std::string strData;
     double doubleData;
     signed int intData; //32 bits integer
@@ -66,15 +68,17 @@ protected:
     bool skip; //set to true for ascii dxf, false for binary
 private:
     DRW_TextCodec decoder;
+    bool m_bIgnoreComments {false};
 };
 
 class dxfReaderBinary : public dxfReader {
 public:
-    dxfReaderBinary(std::istream *stream):dxfReader(stream){skip = false; }
+    dxfReaderBinary(std::ifstream *stream):dxfReader(stream){skip = false; }
     virtual ~dxfReaderBinary() {}
     virtual bool readCode(int *code);
     virtual bool readString(std::string *text);
     virtual bool readString();
+    virtual bool readBinary();
     virtual bool readInt16();
     virtual bool readInt32();
     virtual bool readInt64();
@@ -84,11 +88,12 @@ public:
 
 class dxfReaderAscii : public dxfReader {
 public:
-    dxfReaderAscii(std::istream *stream):dxfReader(stream){skip = true; }
+    dxfReaderAscii(std::ifstream *stream):dxfReader(stream){skip = true; }
     virtual ~dxfReaderAscii(){}
     virtual bool readCode(int *code);
     virtual bool readString(std::string *text);
     virtual bool readString();
+    virtual bool readBinary();
     virtual bool readInt16();
     virtual bool readDouble();
     virtual bool readInt32();
