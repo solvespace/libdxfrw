@@ -315,7 +315,7 @@ void DRW_Header::write(const std::unique_ptr<dxfWriter>& writer, DRW::Version ve
     if (getDouble("$DIMSCALE", &varDouble))
         writer->writeDouble(40, varDouble);
     else
-        writer->writeDouble(40, 2.5);
+        writer->writeDouble(40, 1.0);
     writer->writeString(9, "$DIMASZ");
     if (getDouble("$DIMASZ", &varDouble))
         writer->writeDouble(40, varDouble);
@@ -938,6 +938,10 @@ void DRW_Header::write(const std::unique_ptr<dxfWriter>& writer, DRW::Version ve
         writer->writeInt16(70, varInt);
     } else
         writer->writeInt16(70, 6);
+    if (getStr("$TDCREATE", &varStr)) {
+        writer->writeString(9, "$TDCREATE");
+        writer->writeString(40, varStr);
+    }
     if (ver > DRW::AC1009) {
     writer->writeString(9, "$UCSBASE");
     if (getStr("$UCSBASE", &varStr))

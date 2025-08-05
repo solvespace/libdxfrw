@@ -33,7 +33,6 @@ public:
     bool getPreview();
     DRW::Version getVersion(){return version;}
     DRW::error getError(){return error;}
-bool testReader();
     void setDebug(DRW::DebugLevel lvl);
 
 private:

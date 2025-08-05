@@ -84,12 +84,12 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
         binFile = true;
         //skip sentinel
         filestr.seekg (22, std::ios::beg);
-        reader = std::make_unique<dxfReaderBinary>(&filestr);
+        reader = std::unique_ptr<dxfReaderBinary>(new dxfReaderBinary(&filestr));
         DRW_DBG("dxfRW::read binary file\n");
     } else {
         binFile = false;
         filestr.open (fileName.c_str(), std::ios_base::in);
-        reader = std::make_unique<dxfReaderAscii>(&filestr);
+        reader = std::unique_ptr<dxfReaderAscii>(new dxfReaderAscii(&filestr));
     }
 
     bool isOk {processDxf()};
@@ -109,11 +109,11 @@ bool dxfRW::write(DRW_Interface *interface_, DRW::Version ver, bool bin){
         filestr.open (fileName.c_str(), std::ios_base::out | std::ios::binary | std::ios::trunc);
         //write sentinel
         filestr << "AutoCAD Binary DXF\r\n" << (char)26 << '\0';
-        writer = std::make_unique<dxfWriterBinary>(&filestr);
+        writer = std::unique_ptr<dxfWriterBinary>(new dxfWriterBinary(&filestr));
         DRW_DBG("dxfRW::read binary file\n");
     } else {
         filestr.open (fileName.c_str(), std::ios_base::out | std::ios::trunc);
-        writer = std::make_unique<dxfWriterAscii>(&filestr);
+        writer = std::unique_ptr<dxfWriterAscii>(new dxfWriterAscii(&filestr));
         std::string comm = std::string("dxfrw ") + std::string(DRW_VERSION);
         writer->writeString(999, comm);
     }
@@ -447,15 +447,15 @@ bool dxfRW::writeDimstyle(DRW_Dimstyle *ent){
     } else
         writer->writeUtf8Caps(2, ent->name);
     writer->writeInt16(70, ent->flags);
-    if ( version == DRW::AC1009 || !(ent->dimpost.empty()) )
+    if ( version <= DRW::AC1009 || !(ent->dimpost.empty()) )
         writer->writeUtf8String(3, ent->dimpost);
-    if ( version == DRW::AC1009 || !(ent->dimapost.empty()) )
+    if ( version <= DRW::AC1009 || !(ent->dimapost.empty()) )
         writer->writeUtf8String(4, ent->dimapost);
-    if ( version == DRW::AC1009 || !(ent->dimblk.empty()) )
+    if ( version <= DRW::AC1009 || !(ent->dimblk.empty()) )
         writer->writeUtf8String(5, ent->dimblk);
-    if ( version == DRW::AC1009 || !(ent->dimblk1.empty()) )
+    if ( version <= DRW::AC1009 || !(ent->dimblk1.empty()) )
         writer->writeUtf8String(6, ent->dimblk1);
-    if ( version == DRW::AC1009 || !(ent->dimblk2.empty()) )
+    if ( version <= DRW::AC1009 || !(ent->dimblk2.empty()) )
         writer->writeUtf8String(7, ent->dimblk2);
     writer->writeDouble(40, ent->dimscale);
     writer->writeDouble(41, ent->dimasz);
@@ -786,7 +786,7 @@ bool dxfRW::writeLWPolyline(DRW_LWPolyline *ent){
         if (version > DRW::AC1009) {
             writer->writeString(100, "AcDbPolyline");
         }
-        ent->vertexnum = ent->vertlist.size();
+        ent->vertexnum = (int)ent->vertlist.size();
         writer->writeInt32(90, ent->vertexnum);
         writer->writeInt16(70, ent->flags);
         writer->writeDouble(43, ent->width);
@@ -814,11 +814,14 @@ bool dxfRW::writeLWPolyline(DRW_LWPolyline *ent){
 bool dxfRW::writePolyline(DRW_Polyline *ent) {
     writer->writeString(0, "POLYLINE");
     writeEntity(ent);
+    bool is3d = false;
     if (version > DRW::AC1009) {
-        if (ent->flags & 8 || ent->flags & 16)
+        if (ent->flags & 8 || ent->flags & 16) {
             writer->writeString(100, "AcDb3dPolyline");
-        else
+            is3d = true;
+        } else {
             writer->writeString(100, "AcDb2dPolyline");
+        }
     } else
         writer->writeInt16(66, 1);
     writer->writeDouble(10, 0.0);
@@ -854,13 +857,18 @@ bool dxfRW::writePolyline(DRW_Polyline *ent) {
         writer->writeDouble(230, crd.z);
     }
 
-    int vertexnum = ent->vertlist.size();
-    for (int i = 0;  i< vertexnum; i++){
+    size_t vertexnum = ent->vertlist.size();
+    for (size_t i = 0;  i< vertexnum; i++){
         DRW_Vertex *v = ent->vertlist.at(i).get();
         writer->writeString(0, "VERTEX");
         writeEntity(ent);
         if (version > DRW::AC1009)
             writer->writeString(100, "AcDbVertex");
+            if(is3d) {
+                writer->writeString(100, "AcDb3dPolylineVertex");
+            } else {
+                writer->writeString(100, "AcDb2dVertex");
+            }
         if ( (v->flags & 128) && !(v->flags & 64) ) {
             writer->writeDouble(10, 0);
             writer->writeDouble(20, 0);
@@ -953,7 +961,7 @@ bool dxfRW::writeHatch(DRW_Hatch *ent){
         writer->writeString(2, ent->name);
         writer->writeInt16(70, ent->solid);
         writer->writeInt16(71, ent->associative);
-        ent->loopsnum = ent->looplist.size();
+        ent->loopsnum = (int)ent->looplist.size();
         writer->writeInt16(91, ent->loopsnum);
         //write paths data
         for (int i = 0;  i< ent->loopsnum; i++){
@@ -1083,6 +1091,8 @@ bool dxfRW::writeDimension(DRW_Dimension *ent) {
         writer->writeDouble(210, ent->getExtrusion().x);
         writer->writeDouble(220, ent->getExtrusion().y);
         writer->writeDouble(230, ent->getExtrusion().z);
+        if(ent->hasActualMeasurement())
+            writer->writeDouble(42, ent->getActualMeasurement());
 
         switch (ent->eType) {
         case DRW::DIMALIGNED:
@@ -1367,7 +1377,7 @@ bool dxfRW::writeBlock(DRW_Block *bk){
             }
             writer->writeString(100, "AcDbEntity");
         }
-        writer->writeString(8, "0");
+        writer->writeString(8, bk->layer);
         if (version > DRW::AC1009) {
             writer->writeString(100, "AcDbBlockEnd");
         }
@@ -1382,7 +1392,7 @@ bool dxfRW::writeBlock(DRW_Block *bk){
         }
         writer->writeString(100, "AcDbEntity");
     }
-    writer->writeString(8, "0");
+    writer->writeString(8, bk->layer);
     if (version > DRW::AC1009) {
         writer->writeString(100, "AcDbBlockBegin");
         writer->writeUtf8String(2, bk->name);
@@ -1505,7 +1515,7 @@ bool dxfRW::writeTables() {
     writer->writeInt16(70, 1); //end table def
     wlayer0 =false;
     iface->writeLayers();
-    if (!wlayer0) {
+    if (!wlayer0 && version > DRW::AC1009) {
         DRW_Layer lay0;
         lay0.name = "0";
         writeLayer(&lay0);

@@ -480,7 +480,7 @@ bool DRW_LType::parseCode(int code, const std::unique_ptr<dxfReader>& reader){
 /*TODO: control max length permited */
 void DRW_LType::update(){
     double d =0;
-    size = path.size();
+    size = (int)path.size();
     for (int i = 0;  i< size; i++){
         d += fabs(path.at(i));
     }

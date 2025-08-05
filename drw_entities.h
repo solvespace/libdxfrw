@@ -115,6 +115,15 @@ public:
 
     virtual void applyExtrusion() = 0;
 
+    void setWidthMm(double millimeters) {
+        if(millimeters < 0.0) {
+            lWeight = DRW_LW_Conv::widthByLayer;
+            return;
+        }
+        if(millimeters > 2.11) millimeters = 2.11;
+        lWeight = DRW_LW_Conv::dxfInt2lineWidth(int(floor(millimeters * 100.0)));
+    }
+    
 protected:
     //parses dxf pair to read entity
     virtual bool parseCode(int code, const std::unique_ptr<dxfReader>& reader);
@@ -735,6 +744,19 @@ public:
         flags = vertexcount = facecount = 0;
         smoothM = smoothN = curvetype = 0;
     }
+
+    DRW_Polyline(const DRW_Polyline& p) : DRW_Point(p) {
+        flags       = p.flags      ;
+        defstawidth = p.defstawidth;
+        defendwidth = p.defendwidth;
+        vertexcount = p.vertexcount;
+        facecount   = p.facecount  ;
+        smoothM     = p.smoothM    ;
+        smoothN     = p.smoothN    ;
+        curvetype   = p.curvetype  ;
+        for (unsigned i=0; i<p.vertlist.size(); i++)// RLZ ok or new
+          this->vertlist.push_back( std::make_shared<DRW_Vertex>( *(p.vertlist.at(i)) ) );
+    }
     void addVertex (DRW_Vertex v) {
         std::shared_ptr<DRW_Vertex> vert = std::make_shared<DRW_Vertex>();
         vert->basePoint.x = v.basePoint.x;
@@ -787,6 +809,26 @@ public:
         tolknot = tolcontrol = tolfit = 0.0000001;
 
     }
+    
+    DRW_Spline(const DRW_Spline& p):DRW_Entity(p){
+        eType        = DRW::SPLINE;
+        normalVec    = p.normalVec ;
+        tgStart      = p.tgStart   ;
+        tgEnd        = p.tgEnd     ;
+        flags        = p.flags     ;
+        degree       = p.degree    ;
+        nknots       = p.nknots    ;
+        ncontrol     = p.ncontrol  ;
+        nfit         = p.nfit      ;
+        tolknot      = p.tolknot   ;
+        tolcontrol   = p.tolcontrol;
+        tolfit       = p.tolfit    ;
+        
+        for(double v : p.knotslist) knotslist.push_back(v);
+        for(double v : p.weightlist) weightlist.push_back(v);
+        for(auto v : p.controllist) controllist.push_back(std::make_shared<DRW_Coord>(*v));
+        for(auto v : p.fitlist) fitlist.push_back(std::make_shared<DRW_Coord>(*v));
+    }
     virtual void applyExtrusion() override {}
 
 protected:
@@ -838,7 +880,7 @@ public:
     }
 
     void update() {
-        numedges = objlist.size();
+        numedges = (int)objlist.size();
     }
 
 public:
@@ -999,6 +1041,9 @@ public:
         defPoint.z = extPoint.x = extPoint.y = 0;
         textPoint.z = rot = 0;
         clonePoint.x = clonePoint.y = clonePoint.z = 0;
+        length = 0.0;
+        hasmeasureValue = false;
+        measureValue = 0.0;
     }
 
     DRW_Dimension(const DRW_Dimension& d): DRW_Entity(d) {
@@ -1022,6 +1067,7 @@ public:
         arcPoint = d.arcPoint;
         circlePoint = d.circlePoint;
         length = d.length;
+        hasmeasureValue = d.hasmeasureValue;
         measureValue = d.measureValue;
         //RLZ needed a def value for this: hdir = ???
     }
@@ -1058,6 +1104,9 @@ public:
     void setName(const std::string s) {name = s;}
 //    int getType(){ return type;}                      /*!< Dimension type, code 70 */
     double getMeasureValue() const { return measureValue; }  /*!< Real measure value (optional; read only), code 42 */
+    bool hasActualMeasurement() const { return hasmeasureValue; }
+    void setActualMeasurement(double value) { hasmeasureValue = true; measureValue = value; }
+    double getActualMeasurement() const { return getMeasureValue(); }
 
 protected:
     DRW_Coord getPt2() const {return clonePoint;}
@@ -1100,6 +1149,7 @@ private:
     DRW_Coord circlePoint;     /*!< Definition point for diameter, radius & angular dims code 15, 25 & 35 (WCS) */
     DRW_Coord arcPoint;        /*!< Point defining dimension arc, x coordinate, code 16, 26 & 36 (OCS) */
     double length;             /*!< Leader length, code 40 */
+    bool hasmeasureValue;      /*!< Actual measurement has been read, code 42 */
     double measureValue = 0;   /*!< Real measure value (optional; read only), code 42 */
 
 protected:
@@ -1118,6 +1168,7 @@ class DRW_DimAligned : public DRW_Dimension {
 public:
     DRW_DimAligned(){
         eType = DRW::DIMALIGNED;
+        type = 1;
     }
     DRW_DimAligned(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMALIGNED;
@@ -1146,6 +1197,7 @@ class DRW_DimLinear : public DRW_DimAligned {
 public:
     DRW_DimLinear() {
         eType = DRW::DIMLINEAR;
+        type = 0;
     }
     DRW_DimLinear(const DRW_Dimension& d): DRW_DimAligned(d) {
         eType = DRW::DIMLINEAR;
@@ -1167,6 +1219,7 @@ class DRW_DimRadial : public DRW_Dimension {
 public:
     DRW_DimRadial() {
         eType = DRW::DIMRADIAL;
+        type = 4;
     }
     DRW_DimRadial(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMRADIAL;
@@ -1193,6 +1246,7 @@ class DRW_DimDiametric : public DRW_Dimension {
 public:
     DRW_DimDiametric() {
         eType = DRW::DIMDIAMETRIC;
+        type = 3;
     }
     DRW_DimDiametric(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMDIAMETRIC;
@@ -1219,6 +1273,7 @@ class DRW_DimAngular : public DRW_Dimension {
 public:
     DRW_DimAngular() {
         eType = DRW::DIMANGULAR;
+        type = 2;
     }
     DRW_DimAngular(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR;
@@ -1250,6 +1305,7 @@ class DRW_DimAngular3p : public DRW_Dimension {
 public:
     DRW_DimAngular3p() {
         eType = DRW::DIMANGULAR3P;
+        type = 5;
     }
     DRW_DimAngular3p(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMANGULAR3P;
@@ -1278,6 +1334,7 @@ class DRW_DimOrdinate : public DRW_Dimension {
 public:
     DRW_DimOrdinate() {
         eType = DRW::DIMORDINATE;
+        type = 6;
     }
     DRW_DimOrdinate(const DRW_Dimension& d): DRW_Dimension(d) {
         eType = DRW::DIMORDINATE;
