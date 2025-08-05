@@ -36,7 +36,7 @@ public:
 
 class dwgFileStream: public dwgBasicStream{
 public:
-    explicit dwgFileStream(std::ifstream *s)
+    explicit dwgFileStream(std::istream *s)
         :stream{s}
     {
         stream->seekg (0, std::ios::end);
@@ -50,7 +50,7 @@ public:
     bool good() const override{return stream->good();}
     dwgBasicStream* clone() const override{return new dwgFileStream(stream);}
 private:
-    std::ifstream *stream{nullptr};
+    std::istream *stream{nullptr};
     duint64 sz{0};
 };
 
@@ -75,7 +75,7 @@ private:
 
 class dwgBuffer {
 public:
-    dwgBuffer(std::ifstream *stream, DRW_TextCodec *decoder = nullptr);
+    dwgBuffer(std::istream *stream, DRW_TextCodec *decoder = nullptr);
     dwgBuffer(duint8 *buf, duint64 size, DRW_TextCodec *decoder= nullptr);
     dwgBuffer( const dwgBuffer& org );
     dwgBuffer& operator=( const dwgBuffer& org );

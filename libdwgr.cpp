@@ -36,9 +36,7 @@
     secObjects
 };*/
 
-dwgR::dwgR(const char* name)
-    : fileName{ name }
-{
+dwgR::dwgR(){
     DRW_DBGSL(DRW_dbg::Level::None);
 }
 
@@ -55,11 +53,10 @@ void dwgR::setDebug(DRW::DebugLevel lvl){
 }
 
 /*reads metadata and loads image preview*/
-bool dwgR::getPreview(){
+bool dwgR::getPreview(std::istream &stream){
     bool isOk = false;
 
-    std::ifstream filestr;
-    isOk = openFile(&filestr);
+    isOk = open(&stream);
     if (!isOk)
         return false;
 
@@ -69,7 +66,6 @@ bool dwgR::getPreview(){
     } else
         error = DRW::BAD_READ_METADATA;
 
-    filestr.close();
     if (reader) {
         reader.reset();
     }
@@ -77,13 +73,12 @@ bool dwgR::getPreview(){
 }
 
 /*start reading dwg file header and, if can read it, continue reading all*/
-bool dwgR::read(DRW_Interface *interface_, bool ext){
+bool dwgR::read(std::istream &stream, DRW_Interface *interface_, bool ext){
     bool isOk = false;
     applyExt = ext;
     iface = interface_;
 
-    std::ifstream filestr;
-    isOk = openFile(&filestr);
+    isOk = open(&stream);
     if (!isOk)
         return false;
 
@@ -101,7 +96,6 @@ bool dwgR::read(DRW_Interface *interface_, bool ext){
         error = DRW::BAD_READ_METADATA;
     }
 
-    filestr.close();
     if (reader) {
         reader.reset();
     }
@@ -114,7 +108,7 @@ bool dwgR::read(DRW_Interface *interface_, bool ext){
  *
  * \returns nullptr if version is not supported.
 */
-std::unique_ptr<dwgReader> dwgR::createReaderForVersion(DRW::Version version, std::ifstream *stream, dwgR *p )
+std::unique_ptr<dwgReader> dwgR::createReaderForVersion(DRW::Version version, std::istream *stream, dwgR *p )
 {
     switch ( version ) {
        // unsupported
@@ -155,23 +149,15 @@ std::unique_ptr<dwgReader> dwgR::createReaderForVersion(DRW::Version version, st
     return nullptr;
 }
 
-/* Open the file and stores it in filestr, install the correct reader version.
- * If fail opening file, error are set as DRW::BAD_OPEN
+/* Install the correct reader version.
  * If not are DWG or are unsupported version, error are set as DRW::BAD_VERSION
- * and closes filestr.
  * Return true on succeed or false on fail
 */
-bool dwgR::openFile(std::ifstream *filestr){
+bool dwgR::open(std::istream *stream){
     bool isOk = false;
-    DRW_DBG("dwgR::read 1\n");
-    filestr->open (fileName.c_str(), std::ios_base::in | std::ios::binary);
-    if (!filestr->is_open() || !filestr->good() ){
-        error = DRW::BAD_OPEN;
-        return isOk;
-    }
 
     char line[7];
-    filestr->read (line, 6);
+    stream->read (line, 6);
     line[6]='\0';
     DRW_DBG("dwgR::read 2\n");
     DRW_DBG("dwgR::read line version: ");
@@ -188,11 +174,10 @@ bool dwgR::openFile(std::ifstream *filestr){
         }
     }
 
-    reader = createReaderForVersion( version, filestr, this );
+    reader = createReaderForVersion( version, stream, this );
 
     if (!reader) {
         error = DRW::BAD_VERSION;
-        filestr->close();
     } else
         isOk = true;
 
